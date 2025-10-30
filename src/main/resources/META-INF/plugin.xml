@@ -5,6 +5,7 @@
     <vendor>mindpazi</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 
@@ -18,7 +19,7 @@
                 id="com.github.mindpazi.contextinaitool.action.DumpMethods"
                 class="com.github.mindpazi.contextinaitool.action.DumpMethods"
                 text="Dump Methods"
-                description="Stampa i metodi disponibili nella classe selezionata">
+                description="Print the available methods in the selected class">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
     </actions>

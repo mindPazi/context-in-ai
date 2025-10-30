@@ -11,6 +11,5 @@ public class ProjectStartup implements StartupActivity.DumbAware {
     @Override
     public void runActivity(@NotNull Project project) {
         LOG.warn("✅ ProjectStartup called for project: " + project.getName());
-        System.out.println("✅ [STDOUT] ProjectStartup for project: " + project.getName());
     }
 }
