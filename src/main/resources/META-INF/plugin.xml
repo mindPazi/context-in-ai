@@ -9,7 +9,17 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.mindpazi.contextinaitool.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.mindpazi.contextinaitool.startup.MyProjectActivity" />
+        <postStartupActivity implementation="com.github.mindpazi.contextinaitool.activity.ProjectStartup"/>
     </extensions>
+
+
+    <actions>
+        <action
+                id="com.github.mindpazi.contextinaitool.action.DumpMethods"
+                class="com.github.mindpazi.contextinaitool.action.DumpMethods"
+                text="Dump Methods"
+                description="Stampa i metodi disponibili nella classe selezionata">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
 </idea-plugin>
