@@ -11,6 +11,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.github.mindpazi.contextinaitool.activity.ProjectStartup"/>
+        <fileBasedIndex implementation="com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex"/>
     </extensions>
 
 
