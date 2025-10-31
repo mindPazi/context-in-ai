@@ -1,6 +1,7 @@
 package com.github.mindpazi.contextinaitool.activity;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
@@ -10,6 +11,12 @@ public class ProjectStartup implements StartupActivity.DumbAware {
 
     @Override
     public void runActivity(@NotNull Project project) {
-        LOG.warn("✅ ProjectStartup called for project: " + project.getName());
+        LOG.warn("√ ProjectStartup called for project: " + project.getName());
+        
+        
+        DumbService.getInstance(project).runWhenSmart(() -> {
+            LOG.warn("√ Index ready for project: " + project.getName());
+            
+        });
     }
 }
