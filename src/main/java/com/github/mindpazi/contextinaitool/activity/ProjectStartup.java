@@ -11,12 +11,11 @@ public class ProjectStartup implements StartupActivity.DumbAware {
 
     @Override
     public void runActivity(@NotNull Project project) {
-        LOG.warn("√ ProjectStartup called for project: " + project.getName());
-        
-        
+        LOG.debug("√ ProjectStartup called for project: " + project.getName());
+
         DumbService.getInstance(project).runWhenSmart(() -> {
-            LOG.warn("√ Index ready for project: " + project.getName());
-            
+            LOG.debug("√ Index ready for project: " + project.getName());
+
         });
     }
 }

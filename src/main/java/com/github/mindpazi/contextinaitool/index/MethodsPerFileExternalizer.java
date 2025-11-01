@@ -13,40 +13,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MethodsPerFileExternalizer implements DataExternalizer<MethodsPerFileValue> {
-    
+
     public static final MethodsPerFileExternalizer INSTANCE = new MethodsPerFileExternalizer();
-    
-    private MethodsPerFileExternalizer() {}
-    
+
+    private MethodsPerFileExternalizer() {
+    }
+
     @Override
     public void save(@NotNull DataOutput out, MethodsPerFileValue value) throws IOException {
         List<MethodMeta> methods = value.methods();
         out.writeInt(methods.size());
-        
+
         for (MethodMeta method : methods) {
             IOUtil.writeUTF(out, method.classFqn());
             IOUtil.writeUTF(out, method.methodName());
             IOUtil.writeUTF(out, method.filePath());
-            out.writeInt(method.startLine());
-            out.writeInt(method.endLine());
         }
     }
-    
+
     @Override
     public MethodsPerFileValue read(@NotNull DataInput in) throws IOException {
         int size = in.readInt();
         List<MethodMeta> methods = new ArrayList<>(size);
-        
+
         for (int i = 0; i < size; i++) {
             String classFqn = IOUtil.readUTF(in);
             String methodName = IOUtil.readUTF(in);
             String filePath = IOUtil.readUTF(in);
-            int startLine = in.readInt();
-            int endLine = in.readInt();
-            
-            methods.add(new MethodMeta(classFqn, methodName, filePath, startLine, endLine));
+
+            methods.add(new MethodMeta(classFqn, methodName, filePath));
         }
-        
+
         return new MethodsPerFileValue(methods);
     }
 }

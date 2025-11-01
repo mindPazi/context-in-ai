@@ -1,0 +1,212 @@
+[
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.activity.ProjectStartup",
+    "methodName": "runActivity",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/activity/ProjectStartup.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getName",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getIndexer",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getKeyDescriptor",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getValueExternalizer",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getVersion",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getInputFilter",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "dependsOnFileContent",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "JavaMethodExtractor",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "extract",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "extractMethodsFromClass",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "DumpMethods",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "actionPerformed",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "collectAllMethods",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizerTest",
+    "methodName": "testSaveAndRead",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizerTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizerTest",
+    "methodName": "testEmptyList",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizerTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.dump.JsonDumper",
+    "methodName": "dump",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/dump/JsonDumper.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "getTestDataPath",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractSimpleMethod",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractMultipleMethods",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractConstructor",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractNestedClassMethods",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testEmptyClass",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizer",
+    "methodName": "MethodsPerFileExternalizer",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizer.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizer",
+    "methodName": "save",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizer.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizer",
+    "methodName": "read",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizer.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "testJavaMethodExtraction",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "testMethodStructure",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "testMethodsPerFileValue",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "testEmptyMethodsList",
+    "filePath": "/Users/gennarai/Desktop/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "startLine": 1,
+    "endLine": 1
+  }
+]

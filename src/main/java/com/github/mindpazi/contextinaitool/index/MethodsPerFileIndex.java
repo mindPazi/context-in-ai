@@ -3,6 +3,7 @@ package com.github.mindpazi.contextinaitool.index;
 import com.github.mindpazi.contextinaitool.model.MethodMeta;
 import com.github.mindpazi.contextinaitool.model.MethodsPerFileValue;
 import com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.util.indexing.*;
@@ -16,18 +17,18 @@ import java.util.List;
 import java.util.Map;
 
 public class MethodsPerFileIndex extends FileBasedIndexExtension<String, MethodsPerFileValue> {
-    
-    public static final ID<String, MethodsPerFileValue> INDEX_ID = 
-            ID.create("com.github.mindpazi.contextinaitool.methodsPerFile");
-    
-    private static final String KEY = "methods";
-    
+
+    private static final Logger LOG = Logger.getInstance(MethodsPerFileIndex.class);
+
+    public static final ID<String, MethodsPerFileValue> INDEX_ID = ID
+            .create("com.github.mindpazi.contextinaitool.methodsPerFile");
+
     @NotNull
     @Override
     public ID<String, MethodsPerFileValue> getName() {
         return INDEX_ID;
     }
-    
+
     @NotNull
     @Override
     public DataIndexer<String, MethodsPerFileValue, FileContent> getIndexer() {
@@ -35,64 +36,61 @@ public class MethodsPerFileIndex extends FileBasedIndexExtension<String, Methods
             @NotNull
             @Override
             public Map<String, MethodsPerFileValue> map(@NotNull FileContent inputData) {
+                String filePath = inputData.getFile().getPath();
+                LOG.debug("Indexing file: " + filePath);
+
                 PsiFile psiFile = inputData.getPsiFile();
                 if (!(psiFile instanceof PsiJavaFile javaFile)) {
+                    LOG.debug("Not a Java file, skipping: " + filePath);
                     return Collections.emptyMap();
                 }
 
                 List<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+                LOG.debug("Extracted " + methods.size() + " methods from: " + filePath);
+
                 if (methods.isEmpty()) {
+                    LOG.debug("No methods found in: " + filePath);
                     return Collections.emptyMap();
                 }
 
-                return Map.of(KEY, new MethodsPerFileValue(methods));
+                LOG.debug("Storing " + methods.size() + " methods with key: " + filePath);
+                return Map.of(filePath, new MethodsPerFileValue(methods));
             }
         };
-        // Lambda version:
-        // return inputData -> {
-        //     PsiFile psiFile = inputData.getPsiFile();
-        //     if (!(psiFile instanceof PsiJavaFile javaFile)) {
-        //         return Collections.emptyMap();
-        //     }
-        //     
-        //     List<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
-        //     if (methods.isEmpty()) {
-        //         return Collections.emptyMap();
-        //     }
-        //     
-        //     return Map.of(KEY, new MethodsPerFileValue(methods));
-        // };
     }
-    
+
     @NotNull
     @Override
     public KeyDescriptor<String> getKeyDescriptor() {
         return EnumeratorStringDescriptor.INSTANCE;
     }
-    
+
     @NotNull
     @Override
     public DataExternalizer<MethodsPerFileValue> getValueExternalizer() {
         return MethodsPerFileExternalizer.INSTANCE;
     }
-    
+
     @Override
     public int getVersion() {
-        return 1;
+        return 3;
     }
-    
+
     @NotNull
     @Override
     public FileBasedIndex.InputFilter getInputFilter() {
         return new FileBasedIndex.InputFilter() {
             @Override
             public boolean acceptInput(@NotNull com.intellij.openapi.vfs.VirtualFile file) {
-                return "java".equals(file.getExtension());
+                boolean isJava = "java".equals(file.getExtension());
+                if (isJava) {
+                    LOG.debug("Accepting Java file for indexing: " + file.getPath());
+                }
+                return isJava;
             }
         };
-        // Lambda version: return file -> "java".equals(file.getExtension());
     }
-    
+
     @Override
     public boolean dependsOnFileContent() {
         return true;

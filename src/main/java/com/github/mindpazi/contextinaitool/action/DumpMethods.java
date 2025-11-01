@@ -39,11 +39,10 @@ public class DumpMethods extends AnAction {
 
         if (DumbService.getInstance(project).isDumb()) {
             Notifications.Bus.notify(new Notification(
-                "MethodDumper",
-                "Indexing in Progress",
-                "Please wait for the project indexing to complete before dumping methods.",
-                NotificationType.INFORMATION
-            ), project);
+                    "MethodDumper",
+                    "Indexing in Progress",
+                    "Please wait for the project indexing to complete before dumping methods.",
+                    NotificationType.INFORMATION), project);
         }
 
         DumbService.getInstance(project).runWhenSmart(() -> {
@@ -51,25 +50,23 @@ public class DumpMethods extends AnAction {
                 try {
                     List<MethodMeta> allMethods = ReadAction.compute(() -> collectAllMethods(project));
                     JsonDumper.dump(allMethods, project);
-                    LOG.warn("√ Dumped " + allMethods.size() + " methods to JSON");
-                    
+                    LOG.debug("√ Dumped " + allMethods.size() + " methods to JSON");
+
                     ApplicationManager.getApplication().invokeLater(() -> {
                         Notifications.Bus.notify(new Notification(
-                            "MethodDumper",
-                            "Methods Dumped Successfully",
-                            "Dumped " + allMethods.size() + " methods to methods.json",
-                            NotificationType.INFORMATION
-                        ), project);
+                                "MethodDumper",
+                                "Methods Dumped Successfully",
+                                "Dumped " + allMethods.size() + " methods to methods.json",
+                                NotificationType.INFORMATION), project);
                     });
                 } catch (Exception ex) {
                     LOG.error("Failed to dump methods", ex);
                     ApplicationManager.getApplication().invokeLater(() -> {
                         Notifications.Bus.notify(new Notification(
-                            "MethodDumper",
-                            "Dump Failed",
-                            "Failed to dump methods: " + ex.getMessage(),
-                            NotificationType.ERROR
-                        ), project);
+                                "MethodDumper",
+                                "Dump Failed",
+                                "Failed to dump methods: " + ex.getMessage(),
+                                NotificationType.ERROR), project);
                     });
                 }
             });
@@ -82,19 +79,21 @@ public class DumpMethods extends AnAction {
         GlobalSearchScope scope = GlobalSearchScope.projectScope(project);
         Collection<String> allKeys = index.getAllKeys(MethodsPerFileIndex.INDEX_ID, project);
 
+        LOG.debug("Found " + allKeys.size() + " keys in index");
         for (String key : allKeys) {
+            LOG.debug("Processing key: " + key);
             index.processValues(
-                MethodsPerFileIndex.INDEX_ID,
-                key,
-                null,
-                (file, value) -> {
-                    if (value != null && value.methods() != null) {
-                        allMethods.addAll(value.methods());
-                    }
-                    return true;
-                },
-                scope
-            );
+                    MethodsPerFileIndex.INDEX_ID,
+                    key,
+                    null,
+                    (file, value) -> {
+                        if (value != null && value.methods() != null) {
+                            LOG.debug("Found " + value.methods().size() + " methods in file: " + file.getPath());
+                            allMethods.addAll(value.methods());
+                        }
+                        return true;
+                    },
+                    scope);
         }
 
         return allMethods;
