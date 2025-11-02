@@ -9,10 +9,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Set;
 
 public class JsonDumper {
-    public static void dump(List<MethodMeta> methods, Project project) throws IOException {
+    public static void dump(Set<MethodMeta> methods, Project project) throws IOException {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(methods);
         Path outputPath = Paths.get(project.getBasePath(), "methods.json");

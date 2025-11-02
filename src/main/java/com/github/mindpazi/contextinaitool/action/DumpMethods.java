@@ -19,9 +19,9 @@ import com.intellij.util.indexing.FileBasedIndex;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class DumpMethods extends AnAction {
     private static final Logger LOG = Logger.getInstance(DumpMethods.class);
@@ -48,7 +48,7 @@ public class DumpMethods extends AnAction {
         DumbService.getInstance(project).runWhenSmart(() -> {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
-                    List<MethodMeta> allMethods = ReadAction.compute(() -> collectAllMethods(project));
+                    Set<MethodMeta> allMethods = ReadAction.compute(() -> collectAllMethods(project));
                     JsonDumper.dump(allMethods, project);
                     LOG.debug("√ Dumped " + allMethods.size() + " methods to JSON");
 
@@ -73,8 +73,8 @@ public class DumpMethods extends AnAction {
         });
     }
 
-    private List<MethodMeta> collectAllMethods(Project project) {
-        List<MethodMeta> allMethods = new ArrayList<>();
+    private Set<MethodMeta> collectAllMethods(Project project) {
+        Set<MethodMeta> allMethods = new LinkedHashSet<>();
         FileBasedIndex index = FileBasedIndex.getInstance();
         GlobalSearchScope scope = GlobalSearchScope.projectScope(project);
         Collection<String> allKeys = index.getAllKeys(MethodsPerFileIndex.INDEX_ID, project);

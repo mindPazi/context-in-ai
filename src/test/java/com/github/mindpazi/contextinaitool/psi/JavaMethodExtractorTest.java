@@ -4,7 +4,7 @@ import com.github.mindpazi.contextinaitool.model.MethodMeta;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 
-import java.util.List;
+import java.util.Set;
 
 public class JavaMethodExtractorTest extends BasePlatformTestCase {
 
@@ -26,13 +26,14 @@ public class JavaMethodExtractorTest extends BasePlatformTestCase {
 
         PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText("TestClass.java", javaCode);
 
-        List<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
 
         assertEquals(1, methods.size());
 
-        MethodMeta method = methods.getFirst();
+        MethodMeta method = methods.iterator().next();
         assertEquals("com.example.TestClass", method.classFqn());
         assertEquals("simpleMethod", method.methodName());
+        assertEquals("()", method.signature());
     }
 
     public void testExtractMultipleMethods() {
@@ -56,21 +57,33 @@ public class JavaMethodExtractorTest extends BasePlatformTestCase {
 
         PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText("TestClass.java", javaCode);
 
-        List<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
 
         assertEquals(3, methods.size());
 
-        MethodMeta first = methods.getFirst();
+        MethodMeta first = methods.stream()
+                .filter(m -> m.methodName().equals("firstMethod"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(first);
         assertEquals("com.example.TestClass", first.classFqn());
-        assertEquals("firstMethod", first.methodName());
+        assertEquals("()", first.signature());
 
-        MethodMeta second = methods.get(1);
+        MethodMeta second = methods.stream()
+                .filter(m -> m.methodName().equals("secondMethod"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(second);
         assertEquals("com.example.TestClass", second.classFqn());
-        assertEquals("secondMethod", second.methodName());
+        assertEquals("(String)", second.signature());
 
-        MethodMeta third = methods.get(2);
+        MethodMeta third = methods.stream()
+                .filter(m -> m.methodName().equals("thirdMethod"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(third);
         assertEquals("com.example.TestClass", third.classFqn());
-        assertEquals("thirdMethod", third.methodName());
+        assertEquals("()", third.signature());
     }
 
     public void testExtractConstructor() {
@@ -90,15 +103,23 @@ public class JavaMethodExtractorTest extends BasePlatformTestCase {
 
         PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText("TestClass.java", javaCode);
 
-        List<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
 
         assertEquals(2, methods.size());
 
-        MethodMeta defaultConstructor = methods.getFirst();
+        MethodMeta defaultConstructor = methods.stream()
+                .filter(m -> m.signature().equals("()"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(defaultConstructor);
         assertEquals("com.example.TestClass", defaultConstructor.classFqn());
         assertEquals("TestClass", defaultConstructor.methodName());
 
-        MethodMeta paramConstructor = methods.get(1);
+        MethodMeta paramConstructor = methods.stream()
+                .filter(m -> m.signature().equals("(String)"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(paramConstructor);
         assertEquals("com.example.TestClass", paramConstructor.classFqn());
         assertEquals("TestClass", paramConstructor.methodName());
     }
@@ -122,7 +143,7 @@ public class JavaMethodExtractorTest extends BasePlatformTestCase {
 
         PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText("OuterClass.java", javaCode);
 
-        List<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
 
         assertEquals(2, methods.size());
 
@@ -151,7 +172,7 @@ public class JavaMethodExtractorTest extends BasePlatformTestCase {
 
         PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText("EmptyClass.java", javaCode);
 
-        List<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
 
         assertEquals(0, methods.size());
     }

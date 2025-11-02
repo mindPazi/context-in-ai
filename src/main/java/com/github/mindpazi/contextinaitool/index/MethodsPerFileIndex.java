@@ -13,8 +13,8 @@ import com.intellij.util.io.KeyDescriptor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MethodsPerFileIndex extends FileBasedIndexExtension<String, MethodsPerFileValue> {
 
@@ -45,7 +45,7 @@ public class MethodsPerFileIndex extends FileBasedIndexExtension<String, Methods
                     return Collections.emptyMap();
                 }
 
-                List<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+                Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
                 LOG.debug("Extracted " + methods.size() + " methods from: " + filePath);
 
                 if (methods.isEmpty()) {
@@ -73,7 +73,7 @@ public class MethodsPerFileIndex extends FileBasedIndexExtension<String, Methods
 
     @Override
     public int getVersion() {
-        return 3;
+        return 5;
     }
 
     @NotNull

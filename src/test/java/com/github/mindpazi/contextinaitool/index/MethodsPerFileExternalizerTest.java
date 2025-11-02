@@ -5,8 +5,8 @@ import com.github.mindpazi.contextinaitool.model.MethodsPerFileValue;
 import org.junit.Test;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -16,10 +16,10 @@ public class MethodsPerFileExternalizerTest {
     public void testSaveAndRead() throws IOException {
         MethodsPerFileExternalizer externalizer = MethodsPerFileExternalizer.INSTANCE;
 
-        List<MethodMeta> originalMethods = Arrays.asList(
-                new MethodMeta("com.example.TestClass", "method1", "/path/to/file.java"),
-                new MethodMeta("com.example.TestClass", "method2", "/path/to/file.java"),
-                new MethodMeta("com.example.OtherClass", "method3", "/path/to/other.java"));
+        Set<MethodMeta> originalMethods = new LinkedHashSet<>();
+        originalMethods.add(new MethodMeta("com.example.TestClass", "method1", "()", "/path/to/file.java"));
+        originalMethods.add(new MethodMeta("com.example.TestClass", "method2", "(String)", "/path/to/file.java"));
+        originalMethods.add(new MethodMeta("com.example.OtherClass", "method3", "(int, int)", "/path/to/other.java"));
 
         MethodsPerFileValue originalValue = new MethodsPerFileValue(originalMethods);
 
@@ -33,16 +33,17 @@ public class MethodsPerFileExternalizerTest {
         DataInputStream in = new DataInputStream(bais);
         MethodsPerFileValue readValue = externalizer.read(in);
 
-        List<MethodMeta> readMethods = readValue.methods();
+        Set<MethodMeta> readMethods = readValue.methods();
         assertEquals(originalMethods.size(), readMethods.size());
 
-        for (int i = 0; i < originalMethods.size(); i++) {
-            MethodMeta original = originalMethods.get(i);
-            MethodMeta read = readMethods.get(i);
-
-            assertEquals(original.classFqn(), read.classFqn());
-            assertEquals(original.methodName(), read.methodName());
-            assertEquals(original.filePath(), read.filePath());
+        for (MethodMeta original : originalMethods) {
+            boolean found = readMethods.stream().anyMatch(read ->
+                    original.classFqn().equals(read.classFqn()) &&
+                    original.methodName().equals(read.methodName()) &&
+                    original.signature().equals(read.signature()) &&
+                    original.filePath().equals(read.filePath())
+            );
+            assertEquals("Should find method: " + original.methodName(), true, found);
         }
     }
 
@@ -50,8 +51,8 @@ public class MethodsPerFileExternalizerTest {
     public void testEmptyList() throws IOException {
         MethodsPerFileExternalizer externalizer = MethodsPerFileExternalizer.INSTANCE;
 
-        List<MethodMeta> emptyList = Arrays.asList();
-        MethodsPerFileValue originalValue = new MethodsPerFileValue(emptyList);
+        Set<MethodMeta> emptySet = new LinkedHashSet<>();
+        MethodsPerFileValue originalValue = new MethodsPerFileValue(emptySet);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(baos);

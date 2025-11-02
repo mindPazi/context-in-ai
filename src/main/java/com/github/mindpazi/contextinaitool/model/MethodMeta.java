@@ -1,7 +1,10 @@
 package com.github.mindpazi.contextinaitool.model;
 
+import java.io.Serializable;
+
 public record MethodMeta(
-                String classFqn, // e.g. com.example.Foo
+                String classFqn,
                 String methodName,
-                String filePath) {
+                String signature,
+                String filePath) implements Serializable {
 }
