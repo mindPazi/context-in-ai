@@ -50,6 +50,9 @@ public class DumpMethods extends AnAction {
                 try {
                     Set<MethodMeta> allMethods = ReadAction.compute(() -> collectAllMethods(project));
                     JsonDumper.dump(allMethods, project);
+                    
+                    project.getBaseDir().refresh(false, true);
+                    
                     LOG.debug("√ Dumped " + allMethods.size() + " methods to JSON");
 
                     ApplicationManager.getApplication().invokeLater(() -> {
