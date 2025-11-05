@@ -6,5 +6,6 @@ public record MethodMeta(
                 String classFqn,
                 String methodName,
                 String signature,
-                String filePath) implements Serializable {
+                String filePath,
+                String body) implements Serializable {
 }

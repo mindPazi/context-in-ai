@@ -56,9 +56,9 @@ public class DumpMethodsTest extends BasePlatformTestCase {
 
     public void testMethodStructure() {
         Set<MethodMeta> testMethods = new LinkedHashSet<>();
-        testMethods.add(new MethodMeta("com.test.ClassA", "methodA", "()", "/test/ClassA.java"));
-        testMethods.add(new MethodMeta("com.test.ClassB", "methodB", "(String)", "/test/ClassB.java"));
-        testMethods.add(new MethodMeta("com.test.ClassB", "methodC", "(int, int)", "/test/ClassB.java"));
+        testMethods.add(new MethodMeta("com.test.ClassA", "methodA", "()", "/test/ClassA.java", ""));
+        testMethods.add(new MethodMeta("com.test.ClassB", "methodB", "(String)", "/test/ClassB.java", ""));
+        testMethods.add(new MethodMeta("com.test.ClassB", "methodC", "(int, int)", "/test/ClassB.java", ""));
 
         assertEquals(3, testMethods.size());
         assertTrue(testMethods.stream().anyMatch(m -> m.methodName().equals("methodA") && m.classFqn().equals("com.test.ClassA")));
@@ -66,8 +66,8 @@ public class DumpMethodsTest extends BasePlatformTestCase {
 
     public void testMethodsPerFileValue() {
         Set<MethodMeta> methods = new LinkedHashSet<>();
-        methods.add(new MethodMeta("com.example.Test", "test1", "()", "/path/Test.java"));
-        methods.add(new MethodMeta("com.example.Test", "test2", "(String)", "/path/Test.java"));
+        methods.add(new MethodMeta("com.example.Test", "test1", "()", "/path/Test.java", ""));
+        methods.add(new MethodMeta("com.example.Test", "test2", "(String)", "/path/Test.java", ""));
 
         MethodsPerFileValue value = new MethodsPerFileValue(methods);
 

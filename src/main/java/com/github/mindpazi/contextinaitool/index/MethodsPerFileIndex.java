@@ -73,7 +73,7 @@ public class MethodsPerFileIndex extends FileBasedIndexExtension<String, Methods
 
     @Override
     public int getVersion() {
-        return 5;
+        return 6;
     }
 
     @NotNull

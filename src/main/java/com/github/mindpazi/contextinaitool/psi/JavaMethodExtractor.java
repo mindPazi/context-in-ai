@@ -64,12 +64,14 @@ public class JavaMethodExtractor {
                 LOG.debug("Processing method: " + methodName);
 
                 String signature = getMethodSignature(method);
+                String body = getMethodBody(method);
 
                 MethodMeta meta = new MethodMeta(
                         className,
                         methodName,
                         signature,
-                        filePath);
+                        filePath,
+                        body);
                 out.add(meta);
                 methodCount++;
 
@@ -129,12 +131,14 @@ public class JavaMethodExtractor {
 
                 String lambdaMethodName = "lambda$" + method.getName();
                 String signature = getLambdaSignature(lambda);
+                String body = getLambdaBody(lambda);
 
                 MethodMeta meta = new MethodMeta(
                         lambdaClassName,
                         lambdaMethodName,
                         signature,
-                        filePath);
+                        filePath,
+                        body);
                 out.add(meta);
                 LOG.debug("Found lambda in method: " + method.getName());
             }
@@ -203,5 +207,15 @@ public class JavaMethodExtractor {
         }
 
         return "Object";
+    }
+
+    private static String getMethodBody(PsiMethod method) {
+        PsiCodeBlock body = method.getBody();
+        return body != null ? body.getText() : "";
+    }
+
+    private static String getLambdaBody(PsiLambdaExpression lambda) {
+        PsiElement body = lambda.getBody();
+        return body != null ? body.getText() : "";
     }
 }

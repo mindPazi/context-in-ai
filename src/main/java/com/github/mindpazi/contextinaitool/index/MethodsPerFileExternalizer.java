@@ -29,6 +29,7 @@ public class MethodsPerFileExternalizer implements DataExternalizer<MethodsPerFi
             IOUtil.writeUTF(out, method.methodName());
             IOUtil.writeUTF(out, method.signature());
             IOUtil.writeUTF(out, method.filePath());
+            IOUtil.writeUTF(out, method.body());
         }
     }
 
@@ -42,8 +43,9 @@ public class MethodsPerFileExternalizer implements DataExternalizer<MethodsPerFi
             String methodName = IOUtil.readUTF(in);
             String signature = IOUtil.readUTF(in);
             String filePath = IOUtil.readUTF(in);
+            String body = IOUtil.readUTF(in);
 
-            methods.add(new MethodMeta(classFqn, methodName, signature, filePath));
+            methods.add(new MethodMeta(classFqn, methodName, signature, filePath, body));
         }
 
         return new MethodsPerFileValue(methods);

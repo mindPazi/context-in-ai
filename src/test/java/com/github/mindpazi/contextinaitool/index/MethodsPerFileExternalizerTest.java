@@ -17,9 +17,9 @@ public class MethodsPerFileExternalizerTest {
         MethodsPerFileExternalizer externalizer = MethodsPerFileExternalizer.INSTANCE;
 
         Set<MethodMeta> originalMethods = new LinkedHashSet<>();
-        originalMethods.add(new MethodMeta("com.example.TestClass", "method1", "()", "/path/to/file.java"));
-        originalMethods.add(new MethodMeta("com.example.TestClass", "method2", "(String)", "/path/to/file.java"));
-        originalMethods.add(new MethodMeta("com.example.OtherClass", "method3", "(int, int)", "/path/to/other.java"));
+        originalMethods.add(new MethodMeta("com.example.TestClass", "method1", "()", "/path/to/file.java", ""));
+        originalMethods.add(new MethodMeta("com.example.TestClass", "method2", "(String)", "/path/to/file.java", ""));
+        originalMethods.add(new MethodMeta("com.example.OtherClass", "method3", "(int, int)", "/path/to/other.java", ""));
 
         MethodsPerFileValue originalValue = new MethodsPerFileValue(originalMethods);
 
