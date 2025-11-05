@@ -116,7 +116,7 @@ public class DumpMethods extends AnAction {
                     JavaMethodExtractor.ExtractionResult result = JavaMethodExtractor.extractWithStats(javaFile);
                     allMethods.addAll(result.getMethods());
                     
-                    // Accumulate stats
+                    
                     ExtractionStats fileStats = result.getStats();
                     for (int i = 0; i < fileStats.getMethodCount(); i++) {
                         totalStats.incrementMethods();

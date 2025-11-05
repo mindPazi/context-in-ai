@@ -184,21 +184,23 @@ public class JavaMethodExtractor {
 
         return Arrays.stream(parameters)
                 .map(p -> {
-                    PsiTypeElement typeElement = p.getTypeElement();
-                    if (typeElement != null) {
-
-                        return typeElement.getText();
-                    }
-
+                    
                     if (!isDumb) {
                         try {
                             PsiType type = p.getType();
                             return type.getPresentableText();
                         } catch (Exception e) {
-                            LOG.debug("Failed to resolve lambda parameter type: " + e.getMessage());
+                            LOG.debug("Failed to resolve lambda parameter type from index: " + e.getMessage());
                         }
                     }
 
+                    
+                    PsiTypeElement typeElement = p.getTypeElement();
+                    if (typeElement != null) {
+                        return typeElement.getText();
+                    }
+
+                    
                     return "?";
                 })
                 .collect(Collectors.joining(", ", "(", ")"));
@@ -220,6 +222,7 @@ public class JavaMethodExtractor {
     }
 
     private static String getParameterTypeText(PsiParameter parameter, boolean isDumb) {
+        
         if (!isDumb) {
             try {
                 return parameter.getType().getPresentableText();
@@ -228,11 +231,13 @@ public class JavaMethodExtractor {
             }
         }
 
+        
         PsiTypeElement typeElement = parameter.getTypeElement();
         if (typeElement != null) {
             return typeElement.getText();
         }
 
+        
         return "Object";
     }
 
