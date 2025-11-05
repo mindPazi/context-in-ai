@@ -1,5 +1,6 @@
 package com.github.mindpazi.contextinaitool.psi;
 
+import com.github.mindpazi.contextinaitool.model.ExtractionStats;
 import com.github.mindpazi.contextinaitool.model.MethodMeta;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
@@ -13,7 +14,35 @@ public class JavaMethodExtractor {
 
     private static final Logger LOG = Logger.getInstance(JavaMethodExtractor.class);
 
+    public static class ExtractionResult {
+        private final Set<MethodMeta> methods;
+        private final ExtractionStats stats;
+
+        public ExtractionResult(Set<MethodMeta> methods, ExtractionStats stats) {
+            this.methods = methods;
+            this.stats = stats;
+        }
+
+        public Set<MethodMeta> getMethods() {
+            return methods;
+        }
+
+        public ExtractionStats getStats() {
+            return stats;
+        }
+    }
+
+    public static ExtractionResult extractWithStats(PsiJavaFile javaFile) {
+        ExtractionStats stats = new ExtractionStats();
+        Set<MethodMeta> methods = extract(javaFile, stats);
+        return new ExtractionResult(methods, stats);
+    }
+
     public static Set<MethodMeta> extract(PsiJavaFile javaFile) {
+        return extract(javaFile, null);
+    }
+
+    private static Set<MethodMeta> extract(PsiJavaFile javaFile, ExtractionStats stats) {
         if (javaFile == null) {
             LOG.debug("Cannot extract methods: javaFile is null");
             return Collections.emptySet();
@@ -28,14 +57,14 @@ public class JavaMethodExtractor {
         LOG.debug("Found " + classes.length + " top-level classes in file");
 
         for (PsiClass topClass : classes) {
-            extractMethodsFromClass(topClass, filePath, out);
+            extractMethodsFromClass(topClass, filePath, out, stats);
         }
 
         LOG.debug("Total methods extracted: " + out.size());
         return out;
     }
 
-    private static void extractMethodsFromClass(PsiClass psiClass, String filePath, Set<MethodMeta> out) {
+    private static void extractMethodsFromClass(PsiClass psiClass, String filePath, Set<MethodMeta> out, ExtractionStats stats) {
         if (psiClass == null) {
             return;
         }
@@ -48,6 +77,7 @@ public class JavaMethodExtractor {
                 className = containingClass.getQualifiedName() + "$"
                         + Integer.toHexString(System.identityHashCode(psiClass));
                 LOG.debug("Using synthetic name for anonymous class: " + className);
+                if (stats != null) stats.incrementAnonymousClasses();
             } else {
                 LOG.debug("Skipping class with null qualified name and no valid containing class");
                 return;
@@ -55,8 +85,6 @@ public class JavaMethodExtractor {
         }
 
         LOG.debug("Processing class: " + className);
-
-        int methodCount = 0;
 
         for (PsiElement child : psiClass.getChildren()) {
             if (child instanceof PsiMethod method) {
@@ -73,23 +101,21 @@ public class JavaMethodExtractor {
                         filePath,
                         body);
                 out.add(meta);
-                methodCount++;
+                if (stats != null) stats.incrementMethods();
 
-                extractMethodsFromAnonymousClasses(method, filePath, out);
-                extractMethodsFromLambdas(method, filePath, out);
+                extractMethodsFromAnonymousClasses(method, filePath, out, stats);
+                extractMethodsFromLambdas(method, filePath, out, stats);
             }
         }
 
         PsiClass[] innerClasses = psiClass.getInnerClasses();
         for (PsiClass innerClass : innerClasses) {
             LOG.debug("Found inner class: " + innerClass.getName());
-            extractMethodsFromClass(innerClass, filePath, out);
+            extractMethodsFromClass(innerClass, filePath, out, stats);
         }
-
-        LOG.debug("Found " + methodCount + " methods in class " + className);
     }
 
-    private static void extractMethodsFromAnonymousClasses(PsiMethod method, String filePath, Set<MethodMeta> out) {
+    private static void extractMethodsFromAnonymousClasses(PsiMethod method, String filePath, Set<MethodMeta> out, ExtractionStats stats) {
         if (method.getBody() == null) {
             return;
         }
@@ -98,12 +124,12 @@ public class JavaMethodExtractor {
             @Override
             public void visitAnonymousClass(PsiAnonymousClass aClass) {
                 super.visitAnonymousClass(aClass);
-                extractMethodsFromClass(aClass, filePath, out);
+                extractMethodsFromClass(aClass, filePath, out, stats);
             }
         });
     }
 
-    private static void extractMethodsFromLambdas(PsiMethod method, String filePath, Set<MethodMeta> out) {
+    private static void extractMethodsFromLambdas(PsiMethod method, String filePath, Set<MethodMeta> out, ExtractionStats stats) {
         if (method.getBody() == null) {
             return;
         }
@@ -140,6 +166,7 @@ public class JavaMethodExtractor {
                         filePath,
                         body);
                 out.add(meta);
+                if (stats != null) stats.incrementLambdas();
                 LOG.debug("Found lambda in method: " + method.getName());
             }
         });

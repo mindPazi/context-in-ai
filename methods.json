@@ -1,0 +1,583 @@
+[
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "extractWithStats",
+    "signature": "(PsiJavaFile)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        ExtractionStats stats = new ExtractionStats();\n        Set<MethodMeta> methods = extract(javaFile, stats);\n        return new ExtractionResult(methods, stats);\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "extract",
+    "signature": "(PsiJavaFile)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        return extract(javaFile, null);\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "extract",
+    "signature": "(PsiJavaFile, ExtractionStats)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        if (javaFile == null) {\n            LOG.debug(\"Cannot extract methods: javaFile is null\");\n            return Collections.emptySet();\n        }\n\n        String filePath = javaFile.getVirtualFile().getPath();\n        LOG.debug(\"Extracting methods from: \" + filePath);\n\n        Set<MethodMeta> out = new LinkedHashSet<>();\n\n        PsiClass[] classes = javaFile.getClasses();\n        LOG.debug(\"Found \" + classes.length + \" top-level classes in file\");\n\n        for (PsiClass topClass : classes) {\n            extractMethodsFromClass(topClass, filePath, out, stats);\n        }\n\n        LOG.debug(\"Total methods extracted: \" + out.size());\n        return out;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "extractMethodsFromClass",
+    "signature": "(PsiClass, String, Set<MethodMeta>, ExtractionStats)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        if (psiClass == null) {\n            return;\n        }\n\n        String className = psiClass.getQualifiedName();\n        if (className == null) {\n\n            PsiClass containingClass = PsiTreeUtil.getParentOfType(psiClass, PsiClass.class, true);\n            if (containingClass != null && containingClass.getQualifiedName() != null) {\n                className = containingClass.getQualifiedName() + \"$\"\n                        + Integer.toHexString(System.identityHashCode(psiClass));\n                LOG.debug(\"Using synthetic name for anonymous class: \" + className);\n                if (stats != null) stats.incrementAnonymousClasses();\n            } else {\n                LOG.debug(\"Skipping class with null qualified name and no valid containing class\");\n                return;\n            }\n        }\n\n        LOG.debug(\"Processing class: \" + className);\n\n        for (PsiElement child : psiClass.getChildren()) {\n            if (child instanceof PsiMethod method) {\n                String methodName = method.getName();\n                LOG.debug(\"Processing method: \" + methodName);\n\n                String signature = getMethodSignature(method);\n                String body = getMethodBody(method);\n\n                MethodMeta meta = new MethodMeta(\n                        className,\n                        methodName,\n                        signature,\n                        filePath,\n                        body);\n                out.add(meta);\n                if (stats != null) stats.incrementMethods();\n\n                extractMethodsFromAnonymousClasses(method, filePath, out, stats);\n                extractMethodsFromLambdas(method, filePath, out, stats);\n            }\n        }\n\n        PsiClass[] innerClasses = psiClass.getInnerClasses();\n        for (PsiClass innerClass : innerClasses) {\n            LOG.debug(\"Found inner class: \" + innerClass.getName());\n            extractMethodsFromClass(innerClass, filePath, out, stats);\n        }\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "extractMethodsFromAnonymousClasses",
+    "signature": "(PsiMethod, String, Set<MethodMeta>, ExtractionStats)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        if (method.getBody() == null) {\n            return;\n        }\n\n        method.accept(new JavaRecursiveElementVisitor() {\n            @Override\n            public void visitAnonymousClass(PsiAnonymousClass aClass) {\n                super.visitAnonymousClass(aClass);\n                extractMethodsFromClass(aClass, filePath, out, stats);\n            }\n        });\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor$707d728c",
+    "methodName": "visitAnonymousClass",
+    "signature": "(PsiAnonymousClass)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n                super.visitAnonymousClass(aClass);\n                extractMethodsFromClass(aClass, filePath, out, stats);\n            }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "extractMethodsFromLambdas",
+    "signature": "(PsiMethod, String, Set<MethodMeta>, ExtractionStats)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        if (method.getBody() == null) {\n            return;\n        }\n\n        PsiClass containingClass = method.getContainingClass();\n        if (containingClass == null) {\n            return;\n        }\n\n        String containingClassName = containingClass.getQualifiedName();\n        if (containingClassName == null) {\n\n            containingClassName = containingClass.getName();\n            if (containingClassName == null) {\n                containingClassName = \"UnknownClass\";\n            }\n        }\n\n        final String lambdaClassName = containingClassName;\n\n        method.accept(new JavaRecursiveElementVisitor() {\n            @Override\n            public void visitLambdaExpression(PsiLambdaExpression lambda) {\n                super.visitLambdaExpression(lambda);\n\n                String lambdaMethodName = \"lambda$\" + method.getName();\n                String signature = getLambdaSignature(lambda);\n                String body = getLambdaBody(lambda);\n\n                MethodMeta meta = new MethodMeta(\n                        lambdaClassName,\n                        lambdaMethodName,\n                        signature,\n                        filePath,\n                        body);\n                out.add(meta);\n                if (stats != null) stats.incrementLambdas();\n                LOG.debug(\"Found lambda in method: \" + method.getName());\n            }\n        });\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor$c5789f9",
+    "methodName": "visitLambdaExpression",
+    "signature": "(PsiLambdaExpression)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n                super.visitLambdaExpression(lambda);\n\n                String lambdaMethodName = \"lambda$\" + method.getName();\n                String signature = getLambdaSignature(lambda);\n                String body = getLambdaBody(lambda);\n\n                MethodMeta meta = new MethodMeta(\n                        lambdaClassName,\n                        lambdaMethodName,\n                        signature,\n                        filePath,\n                        body);\n                out.add(meta);\n                if (stats != null) stats.incrementLambdas();\n                LOG.debug(\"Found lambda in method: \" + method.getName());\n            }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "getLambdaSignature",
+    "signature": "(PsiLambdaExpression)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        PsiParameterList paramList = lambda.getParameterList();\n        PsiParameter[] parameters = paramList.getParameters();\n\n        if (parameters.length == 0) {\n            return \"()\";\n        }\n\n        boolean isDumb = lambda.getProject() != null && DumbService.isDumb(lambda.getProject());\n\n        return Arrays.stream(parameters)\n                .map(p -> {\n                    PsiTypeElement typeElement = p.getTypeElement();\n                    if (typeElement != null) {\n\n                        return typeElement.getText();\n                    }\n\n                    if (!isDumb) {\n                        try {\n                            PsiType type = p.getType();\n                            return type.getPresentableText();\n                        } catch (Exception e) {\n                            LOG.debug(\"Failed to resolve lambda parameter type: \" + e.getMessage());\n                        }\n                    }\n\n                    return \"?\";\n                })\n                .collect(Collectors.joining(\", \", \"(\", \")\"));\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "lambda$getLambdaSignature",
+    "signature": "(PsiParameter)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n                    PsiTypeElement typeElement = p.getTypeElement();\n                    if (typeElement != null) {\n\n                        return typeElement.getText();\n                    }\n\n                    if (!isDumb) {\n                        try {\n                            PsiType type = p.getType();\n                            return type.getPresentableText();\n                        } catch (Exception e) {\n                            LOG.debug(\"Failed to resolve lambda parameter type: \" + e.getMessage());\n                        }\n                    }\n\n                    return \"?\";\n                }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "getMethodSignature",
+    "signature": "(PsiMethod)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        PsiParameterList paramList = method.getParameterList();\n        PsiParameter[] parameters = paramList.getParameters();\n\n        if (parameters.length == 0) {\n            return \"()\";\n        }\n\n        boolean isDumb = method.getProject() != null && DumbService.isDumb(method.getProject());\n\n        return Arrays.stream(parameters)\n                .map(p -> getParameterTypeText(p, isDumb))\n                .collect(Collectors.joining(\", \", \"(\", \")\"));\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "lambda$getMethodSignature",
+    "signature": "(PsiParameter)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "getParameterTypeText(p, isDumb)"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "getParameterTypeText",
+    "signature": "(PsiParameter, boolean)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        if (!isDumb) {\n            try {\n                return parameter.getType().getPresentableText();\n            } catch (Exception e) {\n                LOG.debug(\"Failed to get type from index, falling back to text: \" + e.getMessage());\n            }\n        }\n\n        PsiTypeElement typeElement = parameter.getTypeElement();\n        if (typeElement != null) {\n            return typeElement.getText();\n        }\n\n        return \"Object\";\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "getMethodBody",
+    "signature": "(PsiMethod)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        PsiCodeBlock body = method.getBody();\n        return body != null ? body.getText() : \"\";\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor",
+    "methodName": "getLambdaBody",
+    "signature": "(PsiLambdaExpression)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n        PsiElement body = lambda.getBody();\n        return body != null ? body.getText() : \"\";\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor.ExtractionResult",
+    "methodName": "ExtractionResult",
+    "signature": "(Set<MethodMeta>, ExtractionStats)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n            this.methods = methods;\n            this.stats = stats;\n        }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor.ExtractionResult",
+    "methodName": "getMethods",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n            return methods;\n        }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor.ExtractionResult",
+    "methodName": "getStats",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractor.java",
+    "body": "{\n            return stats;\n        }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.dump.JsonDumper",
+    "methodName": "dump",
+    "signature": "(Set<MethodMeta>, Project)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/dump/JsonDumper.java",
+    "body": "{\n        Gson gson = new GsonBuilder()\n                .disableHtmlEscaping()\n                .setPrettyPrinting()\n                .create();\n        String json = gson.toJson(methods);\n        Path outputPath = Paths.get(project.getBasePath(), \"methods.json\");\n        Files.writeString(outputPath, json);\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getName",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "body": "{\n        return INDEX_ID;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getIndexer",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "body": "{\n        return new DataIndexer<>() {\n            @NotNull\n            @Override\n            public Map<String, MethodsPerFileValue> map(@NotNull FileContent inputData) {\n                String filePath = inputData.getFile().getPath();\n                LOG.debug(\"Indexing file: \" + filePath);\n\n                PsiFile psiFile = inputData.getPsiFile();\n                if (!(psiFile instanceof PsiJavaFile javaFile)) {\n                    LOG.debug(\"Not a Java file, skipping: \" + filePath);\n                    return Collections.emptyMap();\n                }\n\n                Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);\n                LOG.debug(\"Extracted \" + methods.size() + \" methods from: \" + filePath);\n\n                if (methods.isEmpty()) {\n                    LOG.debug(\"No methods found in: \" + filePath);\n                    return Collections.emptyMap();\n                }\n\n                LOG.debug(\"Storing \" + methods.size() + \" methods with key: \" + filePath);\n                return Map.of(filePath, new MethodsPerFileValue(methods));\n            }\n        };\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex$6f1f9a44",
+    "methodName": "map",
+    "signature": "(FileContent)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "body": "{\n                String filePath = inputData.getFile().getPath();\n                LOG.debug(\"Indexing file: \" + filePath);\n\n                PsiFile psiFile = inputData.getPsiFile();\n                if (!(psiFile instanceof PsiJavaFile javaFile)) {\n                    LOG.debug(\"Not a Java file, skipping: \" + filePath);\n                    return Collections.emptyMap();\n                }\n\n                Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);\n                LOG.debug(\"Extracted \" + methods.size() + \" methods from: \" + filePath);\n\n                if (methods.isEmpty()) {\n                    LOG.debug(\"No methods found in: \" + filePath);\n                    return Collections.emptyMap();\n                }\n\n                LOG.debug(\"Storing \" + methods.size() + \" methods with key: \" + filePath);\n                return Map.of(filePath, new MethodsPerFileValue(methods));\n            }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getKeyDescriptor",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "body": "{\n        return EnumeratorStringDescriptor.INSTANCE;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getValueExternalizer",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "body": "{\n        return MethodsPerFileExternalizer.INSTANCE;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getVersion",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "body": "{\n        return 6;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "getInputFilter",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "body": "{\n        return new FileBasedIndex.InputFilter() {\n            @Override\n            public boolean acceptInput(@NotNull com.intellij.openapi.vfs.VirtualFile file) {\n                boolean isJava = \"java\".equals(file.getExtension());\n                if (isJava) {\n                    LOG.debug(\"Accepting Java file for indexing: \" + file.getPath());\n                }\n                return isJava;\n            }\n        };\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex$5bc09704",
+    "methodName": "acceptInput",
+    "signature": "(VirtualFile)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "body": "{\n                boolean isJava = \"java\".equals(file.getExtension());\n                if (isJava) {\n                    LOG.debug(\"Accepting Java file for indexing: \" + file.getPath());\n                }\n                return isJava;\n            }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex",
+    "methodName": "dependsOnFileContent",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileIndex.java",
+    "body": "{\n        return true;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizer",
+    "methodName": "MethodsPerFileExternalizer",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizer.java",
+    "body": "{\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizer",
+    "methodName": "save",
+    "signature": "(DataOutput, MethodsPerFileValue)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizer.java",
+    "body": "{\n        Set<MethodMeta> methods = value.methods();\n        out.writeInt(methods.size());\n\n        for (MethodMeta method : methods) {\n            IOUtil.writeUTF(out, method.classFqn());\n            IOUtil.writeUTF(out, method.methodName());\n            IOUtil.writeUTF(out, method.signature());\n            IOUtil.writeUTF(out, method.filePath());\n            IOUtil.writeUTF(out, method.body());\n        }\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizer",
+    "methodName": "read",
+    "signature": "(DataInput)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizer.java",
+    "body": "{\n        int size = in.readInt();\n        Set<MethodMeta> methods = new LinkedHashSet<>(size);\n\n        for (int i = 0; i < size; i++) {\n            String classFqn = IOUtil.readUTF(in);\n            String methodName = IOUtil.readUTF(in);\n            String signature = IOUtil.readUTF(in);\n            String filePath = IOUtil.readUTF(in);\n            String body = IOUtil.readUTF(in);\n\n            methods.add(new MethodMeta(classFqn, methodName, signature, filePath, body));\n        }\n\n        return new MethodsPerFileValue(methods);\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.model.ExtractionStats",
+    "methodName": "incrementMethods",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/model/ExtractionStats.java",
+    "body": "{\n        methodCount++;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.model.ExtractionStats",
+    "methodName": "incrementAnonymousClasses",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/model/ExtractionStats.java",
+    "body": "{\n        anonymousClassCount++;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.model.ExtractionStats",
+    "methodName": "incrementLambdas",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/model/ExtractionStats.java",
+    "body": "{\n        lambdaCount++;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.model.ExtractionStats",
+    "methodName": "getMethodCount",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/model/ExtractionStats.java",
+    "body": "{\n        return methodCount;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.model.ExtractionStats",
+    "methodName": "getAnonymousClassCount",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/model/ExtractionStats.java",
+    "body": "{\n        return anonymousClassCount;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.model.ExtractionStats",
+    "methodName": "getLambdaCount",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/model/ExtractionStats.java",
+    "body": "{\n        return lambdaCount;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.model.ExtractionStats",
+    "methodName": "getTotalCount",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/model/ExtractionStats.java",
+    "body": "{\n        return methodCount + anonymousClassCount + lambdaCount;\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "DumpMethods",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "{\n        super(\"Dump Methods to JSON\", \"Write methods.json for the project\", (Icon) null);\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "actionPerformed",
+    "signature": "(AnActionEvent)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "{\n        Project project = e.getProject();\n        if (project == null) {\n            return;\n        }\n\n        if (DumbService.getInstance(project).isDumb()) {\n            Notifications.Bus.notify(new Notification(\n                    \"MethodDumper\",\n                    \"Indexing in Progress\",\n                    \"Please wait for the project indexing to complete before dumping methods.\",\n                    NotificationType.INFORMATION), project);\n        }\n\n        DumbService.getInstance(project).runWhenSmart(() -> {\n            ApplicationManager.getApplication().executeOnPooledThread(() -> {\n                try {\n                    ExtractionResult result = ReadAction.compute(() -> collectAllMethodsWithStats(project));\n                    Set<MethodMeta> allMethods = result.methods;\n                    ExtractionStats stats = result.stats;\n                    \n                    JsonDumper.dump(allMethods, project);\n                    \n                    project.getBaseDir().refresh(false, true);\n                    \n                    LOG.debug(\"√ Dumped \" + allMethods.size() + \" methods to JSON\");\n\n                    ApplicationManager.getApplication().invokeLater(() -> {\n                        String message = String.format(\n                                \"Methods: %d, Anonymous Classes: %d, Lambdas: %d (Total: %d)\",\n                                stats.getMethodCount(),\n                                stats.getAnonymousClassCount(),\n                                stats.getLambdaCount(),\n                                stats.getTotalCount()\n                        );\n                        \n                        Notifications.Bus.notify(new Notification(\n                                \"MethodDumper\",\n                                \"Methods Dumped Successfully\",\n                                message,\n                                NotificationType.INFORMATION), project);\n                    });\n                } catch (Exception ex) {\n                    LOG.error(\"Failed to dump methods\", ex);\n                    ApplicationManager.getApplication().invokeLater(() -> {\n                        Notifications.Bus.notify(new Notification(\n                                \"MethodDumper\",\n                                \"Dump Failed\",\n                                \"Failed to dump methods: \" + ex.getMessage(),\n                                NotificationType.ERROR), project);\n                    });\n                }\n            });\n        });\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "lambda$actionPerformed",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "collectAllMethodsWithStats(project)"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "lambda$actionPerformed",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "{\n                        String message = String.format(\n                                \"Methods: %d, Anonymous Classes: %d, Lambdas: %d (Total: %d)\",\n                                stats.getMethodCount(),\n                                stats.getAnonymousClassCount(),\n                                stats.getLambdaCount(),\n                                stats.getTotalCount()\n                        );\n                        \n                        Notifications.Bus.notify(new Notification(\n                                \"MethodDumper\",\n                                \"Methods Dumped Successfully\",\n                                message,\n                                NotificationType.INFORMATION), project);\n                    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "lambda$actionPerformed",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "{\n                        Notifications.Bus.notify(new Notification(\n                                \"MethodDumper\",\n                                \"Dump Failed\",\n                                \"Failed to dump methods: \" + ex.getMessage(),\n                                NotificationType.ERROR), project);\n                    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "lambda$actionPerformed",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "{\n                try {\n                    ExtractionResult result = ReadAction.compute(() -> collectAllMethodsWithStats(project));\n                    Set<MethodMeta> allMethods = result.methods;\n                    ExtractionStats stats = result.stats;\n                    \n                    JsonDumper.dump(allMethods, project);\n                    \n                    project.getBaseDir().refresh(false, true);\n                    \n                    LOG.debug(\"√ Dumped \" + allMethods.size() + \" methods to JSON\");\n\n                    ApplicationManager.getApplication().invokeLater(() -> {\n                        String message = String.format(\n                                \"Methods: %d, Anonymous Classes: %d, Lambdas: %d (Total: %d)\",\n                                stats.getMethodCount(),\n                                stats.getAnonymousClassCount(),\n                                stats.getLambdaCount(),\n                                stats.getTotalCount()\n                        );\n                        \n                        Notifications.Bus.notify(new Notification(\n                                \"MethodDumper\",\n                                \"Methods Dumped Successfully\",\n                                message,\n                                NotificationType.INFORMATION), project);\n                    });\n                } catch (Exception ex) {\n                    LOG.error(\"Failed to dump methods\", ex);\n                    ApplicationManager.getApplication().invokeLater(() -> {\n                        Notifications.Bus.notify(new Notification(\n                                \"MethodDumper\",\n                                \"Dump Failed\",\n                                \"Failed to dump methods: \" + ex.getMessage(),\n                                NotificationType.ERROR), project);\n                    });\n                }\n            }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "lambda$actionPerformed",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "{\n            ApplicationManager.getApplication().executeOnPooledThread(() -> {\n                try {\n                    ExtractionResult result = ReadAction.compute(() -> collectAllMethodsWithStats(project));\n                    Set<MethodMeta> allMethods = result.methods;\n                    ExtractionStats stats = result.stats;\n                    \n                    JsonDumper.dump(allMethods, project);\n                    \n                    project.getBaseDir().refresh(false, true);\n                    \n                    LOG.debug(\"√ Dumped \" + allMethods.size() + \" methods to JSON\");\n\n                    ApplicationManager.getApplication().invokeLater(() -> {\n                        String message = String.format(\n                                \"Methods: %d, Anonymous Classes: %d, Lambdas: %d (Total: %d)\",\n                                stats.getMethodCount(),\n                                stats.getAnonymousClassCount(),\n                                stats.getLambdaCount(),\n                                stats.getTotalCount()\n                        );\n                        \n                        Notifications.Bus.notify(new Notification(\n                                \"MethodDumper\",\n                                \"Methods Dumped Successfully\",\n                                message,\n                                NotificationType.INFORMATION), project);\n                    });\n                } catch (Exception ex) {\n                    LOG.error(\"Failed to dump methods\", ex);\n                    ApplicationManager.getApplication().invokeLater(() -> {\n                        Notifications.Bus.notify(new Notification(\n                                \"MethodDumper\",\n                                \"Dump Failed\",\n                                \"Failed to dump methods: \" + ex.getMessage(),\n                                NotificationType.ERROR), project);\n                    });\n                }\n            });\n        }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "collectAllMethodsWithStats",
+    "signature": "(Project)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "{\n        Set<MethodMeta> allMethods = new LinkedHashSet<>();\n        ExtractionStats totalStats = new ExtractionStats();\n        ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);\n        PsiManager psiManager = PsiManager.getInstance(project);\n\n        LOG.debug(\"Scanning project for Java files...\");\n        \n        fileIndex.iterateContent(file -> {\n            if (file.getExtension() != null && file.getExtension().equals(\"java\")) {\n                VirtualFile virtualFile = file;\n                var psiFile = psiManager.findFile(virtualFile);\n                \n                if (psiFile instanceof PsiJavaFile javaFile) {\n                    LOG.debug(\"Extracting methods from: \" + file.getPath());\n                    JavaMethodExtractor.ExtractionResult result = JavaMethodExtractor.extractWithStats(javaFile);\n                    allMethods.addAll(result.getMethods());\n                    \n                    // Accumulate stats\n                    ExtractionStats fileStats = result.getStats();\n                    for (int i = 0; i < fileStats.getMethodCount(); i++) {\n                        totalStats.incrementMethods();\n                    }\n                    for (int i = 0; i < fileStats.getAnonymousClassCount(); i++) {\n                        totalStats.incrementAnonymousClasses();\n                    }\n                    for (int i = 0; i < fileStats.getLambdaCount(); i++) {\n                        totalStats.incrementLambdas();\n                    }\n                }\n            }\n            return true;\n        });\n\n        LOG.debug(\"Total methods collected: \" + allMethods.size());\n        return new ExtractionResult(allMethods, totalStats);\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods",
+    "methodName": "lambda$collectAllMethodsWithStats",
+    "signature": "(VirtualFile)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "{\n            if (file.getExtension() != null && file.getExtension().equals(\"java\")) {\n                VirtualFile virtualFile = file;\n                var psiFile = psiManager.findFile(virtualFile);\n                \n                if (psiFile instanceof PsiJavaFile javaFile) {\n                    LOG.debug(\"Extracting methods from: \" + file.getPath());\n                    JavaMethodExtractor.ExtractionResult result = JavaMethodExtractor.extractWithStats(javaFile);\n                    allMethods.addAll(result.getMethods());\n                    \n                    // Accumulate stats\n                    ExtractionStats fileStats = result.getStats();\n                    for (int i = 0; i < fileStats.getMethodCount(); i++) {\n                        totalStats.incrementMethods();\n                    }\n                    for (int i = 0; i < fileStats.getAnonymousClassCount(); i++) {\n                        totalStats.incrementAnonymousClasses();\n                    }\n                    for (int i = 0; i < fileStats.getLambdaCount(); i++) {\n                        totalStats.incrementLambdas();\n                    }\n                }\n            }\n            return true;\n        }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethods.ExtractionResult",
+    "methodName": "ExtractionResult",
+    "signature": "(Set<MethodMeta>, ExtractionStats)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/action/DumpMethods.java",
+    "body": "{\n            this.methods = methods;\n            this.stats = stats;\n        }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.activity.ProjectStartup",
+    "methodName": "runActivity",
+    "signature": "(Project)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/activity/ProjectStartup.java",
+    "body": "{\n        LOG.debug(\"√ ProjectStartup called for project: \" + project.getName());\n\n        DumbService.getInstance(project).runWhenSmart(() -> {\n            LOG.debug(\"√ Index ready for project: \" + project.getName());\n\n        });\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.activity.ProjectStartup",
+    "methodName": "lambda$runActivity",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/main/java/com/github/mindpazi/contextinaitool/activity/ProjectStartup.java",
+    "body": "{\n            LOG.debug(\"√ Index ready for project: \" + project.getName());\n\n        }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "getTestDataPath",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "{\n        return \"src/test/testData/extractor\";\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractSimpleMethod",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "{\n        String javaCode = \"\"\"\n                package com.example;\n\n                public class TestClass {\n                    public void simpleMethod() {\n                        System.out.println(\"Hello\");\n                    }\n                }\n                \"\"\";\n\n        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText(\"TestClass.java\", javaCode);\n\n        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);\n\n        assertEquals(1, methods.size());\n\n        MethodMeta method = methods.iterator().next();\n        assertEquals(\"com.example.TestClass\", method.classFqn());\n        assertEquals(\"simpleMethod\", method.methodName());\n        assertEquals(\"()\", method.signature());\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractMultipleMethods",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "{\n        String javaCode = \"\"\"\n                 package com.example;\n                \\s\n                 public class TestClass {\n                     public void firstMethod() {\n                         System.out.println(\"First\");\n                     }\n                     \\s\n                     private String secondMethod(String param) {\n                         return \"Second: \" + param;\n                     }\n                    \\s\n                     protected int thirdMethod() {\n                         return 42;\n                     }\n                 }\n                \\s\"\"\";\n\n        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText(\"TestClass.java\", javaCode);\n\n        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);\n\n        assertEquals(3, methods.size());\n\n        MethodMeta first = methods.stream()\n                .filter(m -> m.methodName().equals(\"firstMethod\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(first);\n        assertEquals(\"com.example.TestClass\", first.classFqn());\n        assertEquals(\"()\", first.signature());\n\n        MethodMeta second = methods.stream()\n                .filter(m -> m.methodName().equals(\"secondMethod\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(second);\n        assertEquals(\"com.example.TestClass\", second.classFqn());\n        assertEquals(\"(String)\", second.signature());\n\n        MethodMeta third = methods.stream()\n                .filter(m -> m.methodName().equals(\"thirdMethod\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(third);\n        assertEquals(\"com.example.TestClass\", third.classFqn());\n        assertEquals(\"()\", third.signature());\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractMultipleMethods",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.methodName().equals(\"firstMethod\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractMultipleMethods",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.methodName().equals(\"secondMethod\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractMultipleMethods",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.methodName().equals(\"thirdMethod\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractConstructor",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "{\n        String javaCode = \"\"\"\n                 package com.example;\n                \\s\n                 public class TestClass {\n                     public TestClass() {\n                         System.out.println(\"Constructor\");\n                     }\n                    \\s\n                     public TestClass(String param) {\n                         System.out.println(\"Constructor with param: \" + param);\n                     }\n                 }\n                \\s\"\"\";\n\n        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText(\"TestClass.java\", javaCode);\n\n        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);\n\n        assertEquals(2, methods.size());\n\n        MethodMeta defaultConstructor = methods.stream()\n                .filter(m -> m.signature().equals(\"()\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(defaultConstructor);\n        assertEquals(\"com.example.TestClass\", defaultConstructor.classFqn());\n        assertEquals(\"TestClass\", defaultConstructor.methodName());\n\n        MethodMeta paramConstructor = methods.stream()\n                .filter(m -> m.signature().equals(\"(String)\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(paramConstructor);\n        assertEquals(\"com.example.TestClass\", paramConstructor.classFqn());\n        assertEquals(\"TestClass\", paramConstructor.methodName());\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractConstructor",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.signature().equals(\"()\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractConstructor",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.signature().equals(\"(String)\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractNestedClassMethods",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "{\n        String javaCode = \"\"\"\n                 package com.example;\n                \\s\n                 public class OuterClass {\n                     public void outerMethod() {\n                         System.out.println(\"Outer\");\n                     }\n                    \\s\n                     public static class InnerClass {\n                         public void innerMethod() {\n                             System.out.println(\"Inner\");\n                         }\n                     }\n                 }\n                \\s\"\"\";\n\n        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText(\"OuterClass.java\", javaCode);\n\n        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);\n\n        assertEquals(2, methods.size());\n\n        MethodMeta outerMethod = methods.stream()\n                .filter(m -> m.methodName().equals(\"outerMethod\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(outerMethod);\n        assertEquals(\"com.example.OuterClass\", outerMethod.classFqn());\n\n        MethodMeta innerMethod = methods.stream()\n                .filter(m -> m.methodName().equals(\"innerMethod\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(innerMethod);\n        assertEquals(\"com.example.OuterClass.InnerClass\", innerMethod.classFqn());\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractNestedClassMethods",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.methodName().equals(\"outerMethod\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractNestedClassMethods",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.methodName().equals(\"innerMethod\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testEmptyClass",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "{\n        String javaCode = \"\"\"\n                package com.example;\n\n                public class EmptyClass {\n                }\n                \"\"\";\n\n        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText(\"EmptyClass.java\", javaCode);\n\n        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);\n\n        assertEquals(0, methods.size());\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractAnonymousClass",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "{\n        String javaCode = \"\"\"\n                package com.example;\n\n                public class TestClass {\n                    public void createRunnable() {\n                        Runnable r = new Runnable() {\n                            @Override\n                            public void run() {\n                                System.out.println(\"Running\");\n                            }\n                        };\n                    }\n                }\n                \"\"\";\n\n        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText(\"TestClass.java\", javaCode);\n\n        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);\n\n        System.out.println(\"Extracted \" + methods.size() + \" methods:\");\n        for (MethodMeta m : methods) {\n            System.out.println(\"  - \" + m.classFqn() + \".\" + m.methodName() + m.signature());\n        }\n\n        assertEquals(2, methods.size());\n\n        MethodMeta createRunnableMethod = methods.stream()\n                .filter(m -> m.methodName().equals(\"createRunnable\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(createRunnableMethod);\n        assertEquals(\"com.example.TestClass\", createRunnableMethod.classFqn());\n\n        MethodMeta runMethod = methods.stream()\n                .filter(m -> m.methodName().equals(\"run\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(runMethod);\n        assertTrue(\"Should be from anonymous class\", runMethod.classFqn().contains(\"$\"));\n        assertEquals(\"()\", runMethod.signature());\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractAnonymousClass",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.methodName().equals(\"createRunnable\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractAnonymousClass",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.methodName().equals(\"run\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "testExtractLambda",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "{\n        String javaCode = \"\"\"\n                package com.example;\n\n                import java.util.function.Function;\n\n                public class TestClass {\n                    public void useLambda() {\n                        Function<String, Integer> f = s -> s.length();\n                    }\n                }\n                \"\"\";\n\n        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText(\"TestClass.java\", javaCode);\n\n        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);\n\n        assertTrue(\"Should extract at least 2 methods\", methods.size() >= 2);\n\n        MethodMeta useLambdaMethod = methods.stream()\n                .filter(m -> m.methodName().equals(\"useLambda\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(useLambdaMethod);\n        assertEquals(\"com.example.TestClass\", useLambdaMethod.classFqn());\n\n        MethodMeta lambdaMethod = methods.stream()\n                .filter(m -> m.methodName().startsWith(\"lambda$\"))\n                .findFirst()\n                .orElse(null);\n        assertNotNull(\"Should extract lambda method\", lambdaMethod);\n        assertEquals(\"com.example.TestClass\", lambdaMethod.classFqn());\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractLambda",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.methodName().equals(\"useLambda\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.psi.JavaMethodExtractorTest",
+    "methodName": "lambda$testExtractLambda",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/psi/JavaMethodExtractorTest.java",
+    "body": "m.methodName().startsWith(\"lambda$\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizerTest",
+    "methodName": "testSaveAndRead",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizerTest.java",
+    "body": "{\n        MethodsPerFileExternalizer externalizer = MethodsPerFileExternalizer.INSTANCE;\n\n        Set<MethodMeta> originalMethods = new LinkedHashSet<>();\n        originalMethods.add(new MethodMeta(\"com.example.TestClass\", \"method1\", \"()\", \"/path/to/file.java\", \"\"));\n        originalMethods.add(new MethodMeta(\"com.example.TestClass\", \"method2\", \"(String)\", \"/path/to/file.java\", \"\"));\n        originalMethods.add(new MethodMeta(\"com.example.OtherClass\", \"method3\", \"(int, int)\", \"/path/to/other.java\", \"\"));\n\n        MethodsPerFileValue originalValue = new MethodsPerFileValue(originalMethods);\n\n        ByteArrayOutputStream baos = new ByteArrayOutputStream();\n        DataOutputStream out = new DataOutputStream(baos);\n        externalizer.save(out, originalValue);\n\n        byte[] data = baos.toByteArray();\n\n        ByteArrayInputStream bais = new ByteArrayInputStream(data);\n        DataInputStream in = new DataInputStream(bais);\n        MethodsPerFileValue readValue = externalizer.read(in);\n\n        Set<MethodMeta> readMethods = readValue.methods();\n        assertEquals(originalMethods.size(), readMethods.size());\n\n        for (MethodMeta original : originalMethods) {\n            boolean found = readMethods.stream().anyMatch(read ->\n                    original.classFqn().equals(read.classFqn()) &&\n                    original.methodName().equals(read.methodName()) &&\n                    original.signature().equals(read.signature()) &&\n                    original.filePath().equals(read.filePath())\n            );\n            assertEquals(\"Should find method: \" + original.methodName(), true, found);\n        }\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizerTest",
+    "methodName": "lambda$testSaveAndRead",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizerTest.java",
+    "body": "original.classFqn().equals(read.classFqn()) &&\n                    original.methodName().equals(read.methodName()) &&\n                    original.signature().equals(read.signature()) &&\n                    original.filePath().equals(read.filePath())"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.index.MethodsPerFileExternalizerTest",
+    "methodName": "testEmptyList",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/index/MethodsPerFileExternalizerTest.java",
+    "body": "{\n        MethodsPerFileExternalizer externalizer = MethodsPerFileExternalizer.INSTANCE;\n\n        Set<MethodMeta> emptySet = new LinkedHashSet<>();\n        MethodsPerFileValue originalValue = new MethodsPerFileValue(emptySet);\n\n        ByteArrayOutputStream baos = new ByteArrayOutputStream();\n        DataOutputStream out = new DataOutputStream(baos);\n        externalizer.save(out, originalValue);\n\n        byte[] data = baos.toByteArray();\n\n        ByteArrayInputStream bais = new ByteArrayInputStream(data);\n        DataInputStream in = new DataInputStream(bais);\n        MethodsPerFileValue readValue = externalizer.read(in);\n\n        assertEquals(0, readValue.methods().size());\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "testJavaMethodExtraction",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "{\n        String javaCode = \"\"\"\n                package com.example;\n\n                public class TestClass {\n                    public void publicMethod() {\n                        System.out.println(\"Public\");\n                    }\n\n                    private String privateMethod(String param) {\n                        return \"Result: \" + param;\n                    }\n\n                    protected int protectedMethod(int x) {\n                        return x * 2;\n                    }\n                }\n                \"\"\";\n\n        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText(\"TestClass.java\", javaCode);\n\n        Set<MethodMeta> extractedMethods = JavaMethodExtractor.extract(javaFile);\n\n        assertNotNull(extractedMethods);\n        assertEquals(3, extractedMethods.size());\n\n        assertTrue(\"Should extract publicMethod\",\n                extractedMethods.stream().anyMatch(m -> m.methodName().equals(\"publicMethod\")));\n        assertTrue(\"Should extract privateMethod\",\n                extractedMethods.stream().anyMatch(m -> m.methodName().equals(\"privateMethod\")));\n        assertTrue(\"Should extract protectedMethod\",\n                extractedMethods.stream().anyMatch(m -> m.methodName().equals(\"protectedMethod\")));\n\n        assertTrue(\"All methods should have correct classFqn\",\n                extractedMethods.stream().allMatch(m -> m.classFqn().equals(\"com.example.TestClass\")));\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "lambda$testJavaMethodExtraction",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "m.methodName().equals(\"publicMethod\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "lambda$testJavaMethodExtraction",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "m.methodName().equals(\"privateMethod\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "lambda$testJavaMethodExtraction",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "m.methodName().equals(\"protectedMethod\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "lambda$testJavaMethodExtraction",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "m.classFqn().equals(\"com.example.TestClass\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "testMethodStructure",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "{\n        Set<MethodMeta> testMethods = new LinkedHashSet<>();\n        testMethods.add(new MethodMeta(\"com.test.ClassA\", \"methodA\", \"()\", \"/test/ClassA.java\", \"\"));\n        testMethods.add(new MethodMeta(\"com.test.ClassB\", \"methodB\", \"(String)\", \"/test/ClassB.java\", \"\"));\n        testMethods.add(new MethodMeta(\"com.test.ClassB\", \"methodC\", \"(int, int)\", \"/test/ClassB.java\", \"\"));\n\n        assertEquals(3, testMethods.size());\n        assertTrue(testMethods.stream().anyMatch(m -> m.methodName().equals(\"methodA\") && m.classFqn().equals(\"com.test.ClassA\")));\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "lambda$testMethodStructure",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "m.methodName().equals(\"methodA\") && m.classFqn().equals(\"com.test.ClassA\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "testMethodsPerFileValue",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "{\n        Set<MethodMeta> methods = new LinkedHashSet<>();\n        methods.add(new MethodMeta(\"com.example.Test\", \"test1\", \"()\", \"/path/Test.java\", \"\"));\n        methods.add(new MethodMeta(\"com.example.Test\", \"test2\", \"(String)\", \"/path/Test.java\", \"\"));\n\n        MethodsPerFileValue value = new MethodsPerFileValue(methods);\n\n        assertNotNull(value);\n        assertNotNull(value.methods());\n        assertEquals(2, value.methods().size());\n        assertTrue(value.methods().stream().anyMatch(m -> m.methodName().equals(\"test1\")));\n        assertTrue(value.methods().stream().anyMatch(m -> m.methodName().equals(\"test2\")));\n    }"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "lambda$testMethodsPerFileValue",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "m.methodName().equals(\"test1\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "lambda$testMethodsPerFileValue",
+    "signature": "(MethodMeta)",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "m.methodName().equals(\"test2\")"
+  },
+  {
+    "classFqn": "com.github.mindpazi.contextinaitool.action.DumpMethodsTest",
+    "methodName": "testEmptyMethodsList",
+    "signature": "()",
+    "filePath": "C:/Users/Andrea/Desktop/JetBrains/context-in-ai-tool/src/test/java/com/github/mindpazi/contextinaitool/action/DumpMethodsTest.java",
+    "body": "{\n        Set<MethodMeta> emptySet = Set.of();\n        MethodsPerFileValue value = new MethodsPerFileValue(emptySet);\n\n        assertNotNull(value);\n        assertNotNull(value.methods());\n        assertEquals(0, value.methods().size());\n    }"
+  }
+]

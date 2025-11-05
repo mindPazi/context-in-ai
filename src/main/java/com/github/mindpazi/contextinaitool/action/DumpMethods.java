@@ -1,6 +1,7 @@
 package com.github.mindpazi.contextinaitool.action;
 
 import com.github.mindpazi.contextinaitool.dump.JsonDumper;
+import com.github.mindpazi.contextinaitool.model.ExtractionStats;
 import com.github.mindpazi.contextinaitool.model.MethodMeta;
 import com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor;
 import com.intellij.notification.Notification;
@@ -48,7 +49,10 @@ public class DumpMethods extends AnAction {
         DumbService.getInstance(project).runWhenSmart(() -> {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
-                    Set<MethodMeta> allMethods = ReadAction.compute(() -> collectAllMethods(project));
+                    ExtractionResult result = ReadAction.compute(() -> collectAllMethodsWithStats(project));
+                    Set<MethodMeta> allMethods = result.methods;
+                    ExtractionStats stats = result.stats;
+                    
                     JsonDumper.dump(allMethods, project);
                     
                     project.getBaseDir().refresh(false, true);
@@ -56,10 +60,18 @@ public class DumpMethods extends AnAction {
                     LOG.debug("√ Dumped " + allMethods.size() + " methods to JSON");
 
                     ApplicationManager.getApplication().invokeLater(() -> {
+                        String message = String.format(
+                                "Methods: %d, Anonymous Classes: %d, Lambdas: %d (Total: %d)",
+                                stats.getMethodCount(),
+                                stats.getAnonymousClassCount(),
+                                stats.getLambdaCount(),
+                                stats.getTotalCount()
+                        );
+                        
                         Notifications.Bus.notify(new Notification(
                                 "MethodDumper",
                                 "Methods Dumped Successfully",
-                                "Dumped " + allMethods.size() + " methods to methods.json",
+                                message,
                                 NotificationType.INFORMATION), project);
                     });
                 } catch (Exception ex) {
@@ -76,8 +88,19 @@ public class DumpMethods extends AnAction {
         });
     }
 
-    private Set<MethodMeta> collectAllMethods(Project project) {
+    private static class ExtractionResult {
+        final Set<MethodMeta> methods;
+        final ExtractionStats stats;
+
+        ExtractionResult(Set<MethodMeta> methods, ExtractionStats stats) {
+            this.methods = methods;
+            this.stats = stats;
+        }
+    }
+
+    private ExtractionResult collectAllMethodsWithStats(Project project) {
         Set<MethodMeta> allMethods = new LinkedHashSet<>();
+        ExtractionStats totalStats = new ExtractionStats();
         ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);
         PsiManager psiManager = PsiManager.getInstance(project);
 
@@ -90,14 +113,26 @@ public class DumpMethods extends AnAction {
                 
                 if (psiFile instanceof PsiJavaFile javaFile) {
                     LOG.debug("Extracting methods from: " + file.getPath());
-                    Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
-                    allMethods.addAll(methods);
+                    JavaMethodExtractor.ExtractionResult result = JavaMethodExtractor.extractWithStats(javaFile);
+                    allMethods.addAll(result.getMethods());
+                    
+                    // Accumulate stats
+                    ExtractionStats fileStats = result.getStats();
+                    for (int i = 0; i < fileStats.getMethodCount(); i++) {
+                        totalStats.incrementMethods();
+                    }
+                    for (int i = 0; i < fileStats.getAnonymousClassCount(); i++) {
+                        totalStats.incrementAnonymousClasses();
+                    }
+                    for (int i = 0; i < fileStats.getLambdaCount(); i++) {
+                        totalStats.incrementLambdas();
+                    }
                 }
             }
             return true;
         });
 
         LOG.debug("Total methods collected: " + allMethods.size());
-        return allMethods;
+        return new ExtractionResult(allMethods, totalStats);
     }
 }
