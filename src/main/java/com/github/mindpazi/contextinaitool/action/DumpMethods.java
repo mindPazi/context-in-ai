@@ -12,6 +12,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -44,6 +45,7 @@ public class DumpMethods extends AnAction {
                     "Indexing in Progress",
                     "Please wait for the project indexing to complete before dumping methods.",
                     NotificationType.INFORMATION), project);
+            return;
         }
 
         DumbService.getInstance(project).runWhenSmart(() -> {
@@ -52,11 +54,11 @@ public class DumpMethods extends AnAction {
                     ExtractionResult result = ReadAction.compute(() -> collectAllMethodsWithStats(project));
                     Set<MethodMeta> allMethods = result.methods;
                     ExtractionStats stats = result.stats;
-                    
+
                     JsonDumper.dump(allMethods, project);
-                    
+
                     project.getBaseDir().refresh(false, true);
-                    
+
                     LOG.debug("√ Dumped " + allMethods.size() + " methods to JSON");
 
                     ApplicationManager.getApplication().invokeLater(() -> {
@@ -65,15 +67,18 @@ public class DumpMethods extends AnAction {
                                 stats.getMethodCount(),
                                 stats.getAnonymousClassCount(),
                                 stats.getLambdaCount(),
-                                stats.getTotalCount()
-                        );
-                        
+                                stats.getTotalCount());
+
                         Notifications.Bus.notify(new Notification(
                                 "MethodDumper",
                                 "Methods Dumped Successfully",
                                 message,
                                 NotificationType.INFORMATION), project);
                     });
+                } catch (ProcessCanceledException ex) {
+
+                    LOG.info("Method dump operation was cancelled");
+                    throw ex;
                 } catch (Exception ex) {
                     LOG.error("Failed to dump methods", ex);
                     ApplicationManager.getApplication().invokeLater(() -> {
@@ -105,18 +110,17 @@ public class DumpMethods extends AnAction {
         PsiManager psiManager = PsiManager.getInstance(project);
 
         LOG.debug("Scanning project for Java files...");
-        
+
         fileIndex.iterateContent(file -> {
             if (file.getExtension() != null && file.getExtension().equals("java")) {
                 VirtualFile virtualFile = file;
                 var psiFile = psiManager.findFile(virtualFile);
-                
+
                 if (psiFile instanceof PsiJavaFile javaFile) {
                     LOG.debug("Extracting methods from: " + file.getPath());
                     JavaMethodExtractor.ExtractionResult result = JavaMethodExtractor.extractWithStats(javaFile);
                     allMethods.addAll(result.getMethods());
-                    
-                    
+
                     ExtractionStats fileStats = result.getStats();
                     for (int i = 0; i < fileStats.getMethodCount(); i++) {
                         totalStats.incrementMethods();
