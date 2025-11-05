@@ -57,11 +57,10 @@ public class JavaMethodExtractor {
                 String signature = getMethodSignature(method);
 
                 MethodMeta meta = new MethodMeta(
-                    className,
-                    methodName,
-                    signature,
-                    filePath
-                );
+                        className,
+                        methodName,
+                        signature,
+                        filePath);
                 out.add(meta);
                 methodCount++;
             }
@@ -79,28 +78,32 @@ public class JavaMethodExtractor {
     private static String getMethodSignature(PsiMethod method) {
         PsiParameterList paramList = method.getParameterList();
         PsiParameter[] parameters = paramList.getParameters();
-        
+
         if (parameters.length == 0) {
             return "()";
         }
-        
+
         boolean isDumb = method.getProject() != null && DumbService.isDumb(method.getProject());
-        
+
         return Arrays.stream(parameters)
-            .map(p -> getParameterTypeText(p, isDumb))
-            .collect(Collectors.joining(", ", "(", ")"));
+                .map(p -> getParameterTypeText(p, isDumb))
+                .collect(Collectors.joining(", ", "(", ")"));
     }
 
     private static String getParameterTypeText(PsiParameter parameter, boolean isDumb) {
+        if (!isDumb) {
+            try {
+                return parameter.getType().getPresentableText();
+            } catch (Exception e) {
+                LOG.debug("Failed to get type from index, falling back to text: " + e.getMessage());
+            }
+        }
+
         PsiTypeElement typeElement = parameter.getTypeElement();
         if (typeElement != null) {
             return typeElement.getText();
         }
-        
-        if (!isDumb) {
-            return parameter.getType().getPresentableText();
-        }
-        
+
         return "Object";
     }
 }
