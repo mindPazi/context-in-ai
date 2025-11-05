@@ -32,4 +32,13 @@ public class ExtractionStats {
     public int getTotalCount() {
         return methodCount + anonymousClassCount + lambdaCount;
     }
+
+    public void merge(ExtractionStats other) {
+        if (other == null) {
+            return;
+        }
+        this.methodCount += other.methodCount;
+        this.anonymousClassCount += other.anonymousClassCount;
+        this.lambdaCount += other.lambdaCount;
+    }
 }

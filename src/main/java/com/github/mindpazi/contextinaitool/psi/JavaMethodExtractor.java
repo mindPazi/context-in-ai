@@ -3,7 +3,9 @@ package com.github.mindpazi.contextinaitool.psi;
 import com.github.mindpazi.contextinaitool.model.ExtractionStats;
 import com.github.mindpazi.contextinaitool.model.MethodMeta;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.DumbService;
+import com.intellij.openapi.project.IndexNotReadyException;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 
@@ -64,7 +66,8 @@ public class JavaMethodExtractor {
         return out;
     }
 
-    private static void extractMethodsFromClass(PsiClass psiClass, String filePath, Set<MethodMeta> out, ExtractionStats stats) {
+    private static void extractMethodsFromClass(PsiClass psiClass, String filePath, Set<MethodMeta> out,
+            ExtractionStats stats) {
         if (psiClass == null) {
             return;
         }
@@ -77,7 +80,8 @@ public class JavaMethodExtractor {
                 className = containingClass.getQualifiedName() + "$"
                         + Integer.toHexString(System.identityHashCode(psiClass));
                 LOG.debug("Using synthetic name for anonymous class: " + className);
-                if (stats != null) stats.incrementAnonymousClasses();
+                if (stats != null)
+                    stats.incrementAnonymousClasses();
             } else {
                 LOG.debug("Skipping class with null qualified name and no valid containing class");
                 return;
@@ -101,7 +105,8 @@ public class JavaMethodExtractor {
                         filePath,
                         body);
                 out.add(meta);
-                if (stats != null) stats.incrementMethods();
+                if (stats != null)
+                    stats.incrementMethods();
 
                 extractMethodsFromAnonymousClasses(method, filePath, out, stats);
                 extractMethodsFromLambdas(method, filePath, out, stats);
@@ -115,7 +120,8 @@ public class JavaMethodExtractor {
         }
     }
 
-    private static void extractMethodsFromAnonymousClasses(PsiMethod method, String filePath, Set<MethodMeta> out, ExtractionStats stats) {
+    private static void extractMethodsFromAnonymousClasses(PsiMethod method, String filePath, Set<MethodMeta> out,
+            ExtractionStats stats) {
         if (method.getBody() == null) {
             return;
         }
@@ -129,7 +135,8 @@ public class JavaMethodExtractor {
         });
     }
 
-    private static void extractMethodsFromLambdas(PsiMethod method, String filePath, Set<MethodMeta> out, ExtractionStats stats) {
+    private static void extractMethodsFromLambdas(PsiMethod method, String filePath, Set<MethodMeta> out,
+            ExtractionStats stats) {
         if (method.getBody() == null) {
             return;
         }
@@ -166,7 +173,8 @@ public class JavaMethodExtractor {
                         filePath,
                         body);
                 out.add(meta);
-                if (stats != null) stats.incrementLambdas();
+                if (stats != null)
+                    stats.incrementLambdas();
                 LOG.debug("Found lambda in method: " + method.getName());
             }
         });
@@ -184,23 +192,22 @@ public class JavaMethodExtractor {
 
         return Arrays.stream(parameters)
                 .map(p -> {
-                    
                     if (!isDumb) {
                         try {
                             PsiType type = p.getType();
                             return type.getPresentableText();
-                        } catch (Exception e) {
-                            LOG.debug("Failed to resolve lambda parameter type from index: " + e.getMessage());
+                        } catch (ProcessCanceledException e) {
+                            throw e;
+                        } catch (IndexNotReadyException | PsiInvalidElementAccessException e) {
+                            LOG.debug("Failed to resolve lambda parameter type: " + e.getMessage());
                         }
                     }
 
-                    
                     PsiTypeElement typeElement = p.getTypeElement();
                     if (typeElement != null) {
                         return typeElement.getText();
                     }
 
-                    
                     return "?";
                 })
                 .collect(Collectors.joining(", ", "(", ")"));
@@ -222,22 +229,21 @@ public class JavaMethodExtractor {
     }
 
     private static String getParameterTypeText(PsiParameter parameter, boolean isDumb) {
-        
         if (!isDumb) {
             try {
                 return parameter.getType().getPresentableText();
-            } catch (Exception e) {
+            } catch (ProcessCanceledException e) {
+                throw e;
+            } catch (IndexNotReadyException | PsiInvalidElementAccessException e) {
                 LOG.debug("Failed to get type from index, falling back to text: " + e.getMessage());
             }
         }
 
-        
         PsiTypeElement typeElement = parameter.getTypeElement();
         if (typeElement != null) {
             return typeElement.getText();
         }
 
-        
         return "Object";
     }
 

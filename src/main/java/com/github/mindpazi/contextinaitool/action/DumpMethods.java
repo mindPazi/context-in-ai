@@ -22,6 +22,7 @@ import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -76,16 +77,36 @@ public class DumpMethods extends AnAction {
                                 NotificationType.INFORMATION), project);
                     });
                 } catch (ProcessCanceledException ex) {
-
                     LOG.info("Method dump operation was cancelled");
                     throw ex;
+                } catch (IOException ex) {
+                    LOG.error("Failed to write methods.json file", ex);
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        String errorMsg = ex.getMessage() != null ? ex.getMessage() : "Unknown IO error";
+                        Notifications.Bus.notify(new Notification(
+                                "MethodDumper",
+                                "File Write Error",
+                                "Cannot write methods.json: " + errorMsg +
+                                        ". Check file permissions and disk space.",
+                                NotificationType.ERROR), project);
+                    });
+                } catch (IllegalStateException | IllegalArgumentException ex) {
+                    LOG.error("Invalid project state or arguments", ex);
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        String errorMsg = ex.getMessage() != null ? ex.getMessage() : "Invalid state";
+                        Notifications.Bus.notify(new Notification(
+                                "MethodDumper",
+                                "Invalid Project State",
+                                errorMsg,
+                                NotificationType.ERROR), project);
+                    });
                 } catch (Exception ex) {
-                    LOG.error("Failed to dump methods", ex);
+                    LOG.error("Unexpected error during method extraction", ex);
                     ApplicationManager.getApplication().invokeLater(() -> {
                         Notifications.Bus.notify(new Notification(
                                 "MethodDumper",
-                                "Dump Failed",
-                                "Failed to dump methods: " + ex.getMessage(),
+                                "Unexpected Error",
+                                "An unexpected error occurred. See IDE logs for details.",
                                 NotificationType.ERROR), project);
                     });
                 }
@@ -122,15 +143,7 @@ public class DumpMethods extends AnAction {
                     allMethods.addAll(result.getMethods());
 
                     ExtractionStats fileStats = result.getStats();
-                    for (int i = 0; i < fileStats.getMethodCount(); i++) {
-                        totalStats.incrementMethods();
-                    }
-                    for (int i = 0; i < fileStats.getAnonymousClassCount(); i++) {
-                        totalStats.incrementAnonymousClasses();
-                    }
-                    for (int i = 0; i < fileStats.getLambdaCount(); i++) {
-                        totalStats.incrementLambdas();
-                    }
+                    totalStats.merge(fileStats);
                 }
             }
             return true;
