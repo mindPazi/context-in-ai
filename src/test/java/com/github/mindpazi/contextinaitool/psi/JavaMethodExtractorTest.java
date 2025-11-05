@@ -176,4 +176,81 @@ public class JavaMethodExtractorTest extends BasePlatformTestCase {
 
         assertEquals(0, methods.size());
     }
+
+    public void testExtractAnonymousClass() {
+        String javaCode = """
+                package com.example;
+
+                public class TestClass {
+                    public void createRunnable() {
+                        Runnable r = new Runnable() {
+                            @Override
+                            public void run() {
+                                System.out.println("Running");
+                            }
+                        };
+                    }
+                }
+                """;
+
+        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText("TestClass.java", javaCode);
+
+        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+
+        System.out.println("Extracted " + methods.size() + " methods:");
+        for (MethodMeta m : methods) {
+            System.out.println("  - " + m.classFqn() + "." + m.methodName() + m.signature());
+        }
+
+        assertEquals(2, methods.size());
+
+        MethodMeta createRunnableMethod = methods.stream()
+                .filter(m -> m.methodName().equals("createRunnable"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(createRunnableMethod);
+        assertEquals("com.example.TestClass", createRunnableMethod.classFqn());
+
+        MethodMeta runMethod = methods.stream()
+                .filter(m -> m.methodName().equals("run"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(runMethod);
+        assertTrue("Should be from anonymous class", runMethod.classFqn().contains("$"));
+        assertEquals("()", runMethod.signature());
+    }
+
+    public void testExtractLambda() {
+        String javaCode = """
+                package com.example;
+
+                import java.util.function.Function;
+
+                public class TestClass {
+                    public void useLambda() {
+                        Function<String, Integer> f = s -> s.length();
+                    }
+                }
+                """;
+
+        PsiJavaFile javaFile = (PsiJavaFile) myFixture.configureByText("TestClass.java", javaCode);
+
+        Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+
+        assertTrue("Should extract at least 2 methods", methods.size() >= 2);
+
+        MethodMeta useLambdaMethod = methods.stream()
+                .filter(m -> m.methodName().equals("useLambda"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(useLambdaMethod);
+        assertEquals("com.example.TestClass", useLambdaMethod.classFqn());
+
+        MethodMeta lambdaMethod = methods.stream()
+                .filter(m -> m.methodName().startsWith("lambda$"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull("Should extract lambda method", lambdaMethod);
+        assertEquals("com.example.TestClass", lambdaMethod.classFqn());
+    }
 }

@@ -1,9 +1,8 @@
 package com.github.mindpazi.contextinaitool.action;
 
 import com.github.mindpazi.contextinaitool.dump.JsonDumper;
-import com.github.mindpazi.contextinaitool.index.MethodsPerFileIndex;
 import com.github.mindpazi.contextinaitool.model.MethodMeta;
-import com.github.mindpazi.contextinaitool.model.MethodsPerFileValue;
+import com.github.mindpazi.contextinaitool.psi.JavaMethodExtractor;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
@@ -14,12 +13,13 @@ import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.util.indexing.FileBasedIndex;
+import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -78,27 +78,26 @@ public class DumpMethods extends AnAction {
 
     private Set<MethodMeta> collectAllMethods(Project project) {
         Set<MethodMeta> allMethods = new LinkedHashSet<>();
-        FileBasedIndex index = FileBasedIndex.getInstance();
-        GlobalSearchScope scope = GlobalSearchScope.projectScope(project);
-        Collection<String> allKeys = index.getAllKeys(MethodsPerFileIndex.INDEX_ID, project);
+        ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);
+        PsiManager psiManager = PsiManager.getInstance(project);
 
-        LOG.debug("Found " + allKeys.size() + " keys in index");
-        for (String key : allKeys) {
-            LOG.debug("Processing key: " + key);
-            index.processValues(
-                    MethodsPerFileIndex.INDEX_ID,
-                    key,
-                    null,
-                    (file, value) -> {
-                        if (value != null && value.methods() != null) {
-                            LOG.debug("Found " + value.methods().size() + " methods in file: " + file.getPath());
-                            allMethods.addAll(value.methods());
-                        }
-                        return true;
-                    },
-                    scope);
-        }
+        LOG.debug("Scanning project for Java files...");
+        
+        fileIndex.iterateContent(file -> {
+            if (file.getExtension() != null && file.getExtension().equals("java")) {
+                VirtualFile virtualFile = file;
+                var psiFile = psiManager.findFile(virtualFile);
+                
+                if (psiFile instanceof PsiJavaFile javaFile) {
+                    LOG.debug("Extracting methods from: " + file.getPath());
+                    Set<MethodMeta> methods = JavaMethodExtractor.extract(javaFile);
+                    allMethods.addAll(methods);
+                }
+            }
+            return true;
+        });
 
+        LOG.debug("Total methods collected: " + allMethods.size());
         return allMethods;
     }
 }

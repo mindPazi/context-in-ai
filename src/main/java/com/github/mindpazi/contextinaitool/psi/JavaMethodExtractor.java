@@ -4,6 +4,7 @@ import com.github.mindpazi.contextinaitool.model.MethodMeta;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.psi.*;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,8 +42,16 @@ public class JavaMethodExtractor {
 
         String className = psiClass.getQualifiedName();
         if (className == null) {
-            LOG.debug("Skipping class with null qualified name");
-            return;
+
+            PsiClass containingClass = PsiTreeUtil.getParentOfType(psiClass, PsiClass.class, true);
+            if (containingClass != null && containingClass.getQualifiedName() != null) {
+                className = containingClass.getQualifiedName() + "$"
+                        + Integer.toHexString(System.identityHashCode(psiClass));
+                LOG.debug("Using synthetic name for anonymous class: " + className);
+            } else {
+                LOG.debug("Skipping class with null qualified name and no valid containing class");
+                return;
+            }
         }
 
         LOG.debug("Processing class: " + className);
@@ -63,6 +72,9 @@ public class JavaMethodExtractor {
                         filePath);
                 out.add(meta);
                 methodCount++;
+
+                extractMethodsFromAnonymousClasses(method, filePath, out);
+                extractMethodsFromLambdas(method, filePath, out);
             }
         }
 
@@ -73,6 +85,92 @@ public class JavaMethodExtractor {
         }
 
         LOG.debug("Found " + methodCount + " methods in class " + className);
+    }
+
+    private static void extractMethodsFromAnonymousClasses(PsiMethod method, String filePath, Set<MethodMeta> out) {
+        if (method.getBody() == null) {
+            return;
+        }
+
+        method.accept(new JavaRecursiveElementVisitor() {
+            @Override
+            public void visitAnonymousClass(PsiAnonymousClass aClass) {
+                super.visitAnonymousClass(aClass);
+                extractMethodsFromClass(aClass, filePath, out);
+            }
+        });
+    }
+
+    private static void extractMethodsFromLambdas(PsiMethod method, String filePath, Set<MethodMeta> out) {
+        if (method.getBody() == null) {
+            return;
+        }
+
+        PsiClass containingClass = method.getContainingClass();
+        if (containingClass == null) {
+            return;
+        }
+
+        String containingClassName = containingClass.getQualifiedName();
+        if (containingClassName == null) {
+
+            containingClassName = containingClass.getName();
+            if (containingClassName == null) {
+                containingClassName = "UnknownClass";
+            }
+        }
+
+        final String lambdaClassName = containingClassName;
+
+        method.accept(new JavaRecursiveElementVisitor() {
+            @Override
+            public void visitLambdaExpression(PsiLambdaExpression lambda) {
+                super.visitLambdaExpression(lambda);
+
+                String lambdaMethodName = "lambda$" + method.getName();
+                String signature = getLambdaSignature(lambda);
+
+                MethodMeta meta = new MethodMeta(
+                        lambdaClassName,
+                        lambdaMethodName,
+                        signature,
+                        filePath);
+                out.add(meta);
+                LOG.debug("Found lambda in method: " + method.getName());
+            }
+        });
+    }
+
+    private static String getLambdaSignature(PsiLambdaExpression lambda) {
+        PsiParameterList paramList = lambda.getParameterList();
+        PsiParameter[] parameters = paramList.getParameters();
+
+        if (parameters.length == 0) {
+            return "()";
+        }
+
+        boolean isDumb = lambda.getProject() != null && DumbService.isDumb(lambda.getProject());
+
+        return Arrays.stream(parameters)
+                .map(p -> {
+                    PsiTypeElement typeElement = p.getTypeElement();
+                    if (typeElement != null) {
+
+                        return typeElement.getText();
+                    }
+
+                    if (!isDumb) {
+                        try {
+                            PsiType type = p.getType();
+                            return type.getPresentableText();
+                        } catch (Exception e) {
+                            LOG.debug("Failed to resolve lambda parameter type: " + e.getMessage());
+                        }
+                    }
+
+                    return "?";
+                })
+                .collect(Collectors.joining(", ", "(", ")"));
     }
 
     private static String getMethodSignature(PsiMethod method) {
